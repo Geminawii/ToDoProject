@@ -1,0 +1,11 @@
+import { Loader as LoaderIcon } from "lucide-react";
+
+export function LoaderComp({ size = 48, color = "text-orange-500" }) {
+  return (
+    <LoaderIcon
+      aria-label="loading spinner"
+      className={`animate-spin ${color}`}
+      style={{ width: size, height: size }}
+    />
+  )
+}
