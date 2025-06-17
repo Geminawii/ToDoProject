@@ -3,86 +3,83 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Icon } from "@iconify/react";
 import { toast } from "sonner";
 import { LoaderComp } from "../components/Loader";
 import { useQueryClient } from "@tanstack/react-query";
+import { updateLocalTodo, saveExtendedTodo } from "@/utils/localsstorage";
 import localforage from "localforage";
 
 export default function EditTodoModal({ todo, closeModal }) {
-  const [title, setTitle] = useState(todo.todo || "");
-  const [date, setDate] = useState(todo.date || "");
-  const [priority, setPriority] = useState(todo.priority || "medium");
-  const [description, setDescription] = useState(todo.description || "");
+  const [title, setTitle] = useState(todo?.todo || "");
+  const [date, setDate] = useState(todo?.date || "");
+  const [priority, setPriority] = useState(todo?.priority || "medium");
+  const [description, setDescription] = useState(todo?.description || "");
   const [loading, setLoading] = useState(false);
 
   const queryClient = useQueryClient();
 
   const handleUpdate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
+  let updatedTodo = null;
 
-    try {
+  try {
+    if (String(todo.id).startsWith("local-")) {
+      const todos = (await localforage.getItem("localTodos")) || [];
+
+      const idx = todos.findIndex((t) => t.id === todo.id);
+      if (idx !== -1) {
+        todos[idx] = {
+          ...todos[idx],
+          todo: title,
+          date,
+          priority,
+          description,
+        };
+        await localforage.setItem("localTodos", todos);
+        updatedTodo = todos[idx];
+        toast.success("Local todo updated!");
+      }
+    } else {
       const res = await fetch(`https://dummyjson.com/todos/${todo.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          todo: title,
-          completed: todo.completed, 
-          userId: todo.userId,       
-        }),
+        body: JSON.stringify({ todo: title, date, priority, description }),
       });
 
-      if (!res.ok) throw new Error("Failed to update todo");
+      if (!res.ok) throw new Error("Failed to update todo.");
 
-      const updatedTodo = await res.json();
+      updatedTodo = await res.json();
+      toast.success("Todo updated!");
+    }
 
-      await localforage.setItem(`extra-todo-${todo.id}`, {
-        date,
-        priority,
-        description,
-      });
+    if (updatedTodo) {
+      queryClient.setQueryData(['todo', todo.id], updatedTodo);
+      queryClient.setQueryData(['todos'], (old) => {
+        if (!old?.todos) return old;
 
-      const enriched = {
-        ...updatedTodo,
-        date,
-        priority,
-        description,
-      };
-
-      queryClient.setQueryData(["todos"], (old) => {
-        if (!old) return;
         return {
           ...old,
-          todos: old.todos.map((t) => (t.id === enriched.id ? enriched : t)),
+          todos: old.todos.map((t) =>
+            t.id === todo.id ? updatedTodo : t
+          ),
         };
       });
 
-      queryClient.setQueryData(["todo", enriched.id], enriched);
-
-      toast.success("Todo successfully updated!");
-
-      if (closeModal) closeModal();
-    } catch (err) {
-      toast.error("Failed to update todo");
-      console.error(err);
-    } finally {
-      setLoading(false);
+      closeModal();
     }
-  };
+  } catch (err) {
+    toast.error("Failed to update todo.");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <Card className="w-full max-w-md mx-auto rounded-md">
       <CardContent className="p-6 relative">
-        {closeModal && (
-          <button
-            onClick={closeModal}
-            aria-label="Close"
-            className="absolute top-4 right-4 text-orange-700 hover:text-orange-900"
-          >
-          </button>
-        )}
-
         <h1 className="text-xl font-semibold text-orange-800 mb-4">
           Edit Todo
         </h1>

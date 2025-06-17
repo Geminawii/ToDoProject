@@ -8,8 +8,8 @@ import NotFound from "./components/Error404";
 import ErrorCheck from "./components/ErrorCheck";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import CompletedTodos from "./pages/Completed";
-import UncompletedTodos from "./pages/Uncompleted";
+import CategoriesPage from "./pages/Categories";
+
 
 function App() {
   return (
@@ -22,8 +22,7 @@ function App() {
             <Route path="/todos/add" element={<AddTodo />} />
             <Route path="/test-error" element={<ErrorCheck />} />
             <Route path="*" element={<NotFound />} />
-            <Route path="/completed" element={<CompletedTodos />} />
-            <Route path="/uncompleted" element={<UncompletedTodos />} />
+            <Route path="/categories" element={<CategoriesPage />} />
           </Routes>
       </DndProvider>
     </ErrorBoundary>

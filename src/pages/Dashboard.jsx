@@ -6,8 +6,8 @@ import localforage from "localforage";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all'); 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     (async () => {
@@ -21,27 +21,24 @@ const Dashboard = () => {
 
   return (
     <main className="min-h-screen bg-orange-50">
-      <Navbar 
-        searchTerm={searchTerm} 
-        setSearchTerm={setSearchTerm} 
-        filter={filter} 
-        setFilter={setFilter} 
+      <Navbar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filter={filter}
+        setFilter={setFilter}
       />
 
-      <div className="flex mt-5">
-        <Sidebar user={user} />
+      <div className="flex mt-5 ">
+        <div className="hidden lg:block  sticky top-0 h-screen">
+          <Sidebar user={user} />
+        </div>
 
         <section className="flex-1 p-6 -mt-7">
-          <MainContent 
-            user={user} 
-            searchTerm={searchTerm} 
-            filter={filter} 
-          />
+          <MainContent user={user} searchTerm={searchTerm} filter={filter} />
         </section>
-
       </div>
     </main>
-  )
+  );
 };
 
 export default Dashboard;

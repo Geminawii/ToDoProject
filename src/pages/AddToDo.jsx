@@ -5,64 +5,55 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { LoaderComp } from "@/components/Loader";
-import { Icon } from "@iconify/react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { saveExtendedTodo } from "../utils/localsstorage";
+import { addLocalTodo } from "../utils/localsstorage";
+import localforage from "localforage";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AddTodo({ closeModal }) {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [priority, setPriority] = useState("medium");
+  const [date, setDate] = useState("")
+  const [priority, setPriority] = useState("");
   const [description, setDescription] = useState("");
-  const [userId] = useState(1); 
   const [loading, setLoading] = useState(false);
+  const [userId] = useState(1);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
-
     try {
-      const res = await fetch("https://dummyjson.com/todos/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          todo: title,
-          completed: false,
-          userId,
-        }),
-      });
-
-      const data = await res.json();
+      const newId = `local-${Date.now()}`;
 
       const newTodo = {
-        ...data,
+        id: newId,
+        todo: title,
+        completed: false,
+        userId,
         date,
         priority,
         description,
       };
+      const todos = (await localforage.getItem("localTodos")) || [];
 
-      await saveExtendedTodo(data.id, { date, priority, description });
+      todos.push(newTodo);
+      await localforage.setItem("localTodos", todos);
 
-      toast("Todo created successfully!");
+      toast.success("Local todo successfully added.");
+       queryClient.invalidateQueries(['todos']);   
+      closeModal?.();
 
-      queryClient.setQueryData(["todos"], (old) => {
-        if (!old) return { todos: [newTodo] };
-        return {
-          ...old,
-          todos: [newTodo, ...old.todos],
-        };
-      });
-
-      closeModal ? closeModal() : navigate("/dashboard");
     } catch (err) {
-      toast.error("Failed to create todo");
+      toast.error("Failed to create.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+
 
   return (
     <Card className="w-full max-w-md mx-auto rounded-md">
@@ -72,8 +63,7 @@ export default function AddTodo({ closeModal }) {
             onClick={closeModal}
             aria-label="Close"
             className="absolute top-4 right-4 text-orange-700 hover:text-orange-900"
-          >
-          </button>
+          ></button>
         )}
 
         <h1 className="text-xl font-semibold text-orange-800 mb-4">
@@ -82,7 +72,7 @@ export default function AddTodo({ closeModal }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium">
               Title
             </label>
             <Input
@@ -93,7 +83,7 @@ export default function AddTodo({ closeModal }) {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium">
               Due Date
             </label>
             <Input
@@ -104,41 +94,35 @@ export default function AddTodo({ closeModal }) {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium">
               Priority
             </label>
             <div className="flex gap-3">
               {["low", "medium", "high"].map((level) => (
                 <label
-                  key={level}
-                  className={`flex items-center gap-2 px-3 py-1 rounded-md border cursor-pointer ${
-                    priority === level
-                      ? `border-orange-600 bg-orange-100 text-orange-${
-                          level === "low"
-                            ? "500"
-                            : level === "medium"
-                            ? "700"
-                            : "900"
-                        }`
-                      : "border-gray-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="priority"
-                    value={level}
-                    checked={priority === level}
-                    onChange={() => setPriority(level)}
-                    className="hidden"
-                  />
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                </label>
-              ))}
+                   key={level}
+                   className={`flex items-center gap-2 px-3 py-1 rounded-md border cursor-pointer ${
+                     priority === level
+                       ? `border-orange-600 bg-orange-100`
+                       : "border-gray-300"
+                   }`}
+                 >
+                   <input
+                     type="radio"
+                     name="priority"
+                     value={level}
+                     checked={priority === level}
+                     onChange={() => setPriority(level)}
+                     className="hidden"
+                   />
+                   {level.charAt(0).toUpperCase() + level.slice(1)}
+                 </label>
+               ))}
             </div>
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium">
               Description
             </label>
             <Textarea
