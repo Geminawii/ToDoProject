@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import logo from "../assets/logo.png";
@@ -36,6 +36,17 @@ export default function Navbar({ searchTerm, setSearchTerm, filter, setFilter })
     { icon: "mdi:view-dashboard", label: "Dashboard", path: "/dashboard" },
     { icon: "mdi:folder-outline", label: "Categories", path: "/categories" },
   ];
+
+  const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  const handleLogout = () => {
+    setLoggingOut(true);
+    setTimeout(() => {
+      navigate("/");
+    }, 3000);
+  };
 
   return (
     <nav
@@ -165,14 +176,23 @@ export default function Navbar({ searchTerm, setSearchTerm, filter, setFilter })
                  </DropdownMenuItem>
                ))}
               <DropdownMenuItem asChild>
-                <Link
-                   to="/"
-                   aria-label="Logout"
-                   className="flex items-center gap-2 p-2 text-red-600 font-semibold rounded-md hover:bg-gray-100"
-                 >
-                   <Icon icon="mdi:logout" color="#9C4900" />
-                   <span>Logout</span>
-                 </Link>
+                <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="flex items-center gap-2 text-red-600 font-semibold hover:text-red-800 p-2 rounded-md w-full"
+          >
+            <Icon icon="mdi:logout" />
+            {!isCollapsed && (
+              <>
+                <span>Logout</span>
+                {loggingOut && (
+                  <span className="animate-spin ml-1">
+                    <Icon icon="mdi:loading" />
+                  </span>
+                )}
+              </>
+            )}
+          </button>
                </DropdownMenuItem>
             </nav>
           </DropdownMenuContent>

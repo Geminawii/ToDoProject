@@ -19,7 +19,7 @@ async function fetchTodo(id) {
 }
 
 function getExtendedTodo(id) {
-  const extended = JSON.parse(localforage.getItem("extendedTodos") || "{}");
+  const extended = JSON.parse(localStorage.getItem("extendedTodos") || "{}");
   return extended[id] || {};
 }
 
