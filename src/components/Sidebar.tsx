@@ -1,0 +1,161 @@
+import React, { useState } from "react";
+import { Icon } from "@iconify/react";
+import { Link, useNavigate } from "react-router-dom";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
+
+interface SidebarContentProps {
+  username?: string;
+  email?: string;
+  avatar?: string;
+  isMobile: boolean;
+}
+
+interface UserData {
+  username?: string;
+  email?: string;
+  avatar?: string;
+}
+
+export default function SidebarResponsive() {
+
+  let userData: UserData = {};
+  try {
+    const raw = localStorage.getItem("userData");
+    if (raw) {
+      userData = JSON.parse(raw) as UserData;
+    }
+  } catch (e) {
+    console.warn("Failed to parse userData:", e);
+  }
+
+  return (
+    <div className="flex">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex">
+        <SidebarContent
+          username={userData.username}
+          email={userData.email}
+          avatar={userData.avatar}
+          isMobile={false}
+        />
+      </div>
+
+      {/* Mobile Sidebar */}
+      <div className="lg:hidden p-4">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Open Sidebar">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+
+          <SheetContent side="left" className="p-4 w-64">
+            <SidebarContent
+              username={userData.username}
+              email={userData.email}
+              avatar={userData.avatar}
+              isMobile={true}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
+    </div>
+  );
+}
+
+function SidebarContent({
+  username,
+  email,
+  avatar,
+  isMobile,
+}: SidebarContentProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = (): void => {
+    setLoggingOut(true);
+    setTimeout(() => {
+      navigate("/");
+    }, 3000);
+  };
+
+  return (
+    <aside
+      className={`flex flex-col justify-between p-4 border-r shadow-sm bg-white transition-all duration-500 ease-in-out ${
+        isCollapsed && !isMobile ? "w-20" : "w-64"
+      } sticky top-0 h-screen`}
+    >
+      <div>
+
+        <div className="flex flex-col items-center space-y-2">
+          <Avatar className={isCollapsed && !isMobile ? "w-8 h-8" : "w-16 h-16"}>
+            <AvatarImage src={avatar} alt={username ?? "User Avatar"} />
+            <AvatarFallback>
+              {username ? username.charAt(0).toUpperCase() : "U"}
+            </AvatarFallback>
+          </Avatar>
+
+          {!isCollapsed && !isMobile && (
+            <>
+              <h2 className="text-lg font-semibold text-orange-800">
+                {username}
+              </h2>
+              <p className="text-sm text-gray-600 text-center">{email}</p>
+            </>
+          )}
+        </div>
+
+
+        <nav className="mt-6 space-y-4 text-orange-800 text-sm font-semibold">
+          {[
+            { icon: "mdi:view-dashboard", label: "Dashboard", path: "/dashboard" },
+            { icon: "mdi:folder", label: "Categories", path: "/categories" },
+          ].map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex items-center gap-2 hover:text-orange-600 cursor-pointer p-2 rounded-md"
+            >
+              <Icon icon={item.icon} />
+              {!isCollapsed && <span>{item.label}</span>}
+            </Link>
+          ))}
+
+
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="flex items-center gap-2 text-red-600 font-semibold hover:text-red-800 p-2 rounded-md w-full"
+          >
+            <Icon icon="mdi:logout" />
+            {!isCollapsed && (
+              <>
+                <span>Logout</span>
+                {loggingOut && (
+                  <span className="animate-spin ml-1">
+                    <Icon icon="mdi:loading" />
+                  </span>
+                )}
+              </>
+            )}
+          </button>
+        </nav>
+      </div>
+
+      
+      {!isMobile && (
+        <button
+          aria-label="Toggle Sidebar"
+          onClick={() => setIsCollapsed((prev) => !prev)}
+          className="absolute top-1/8 -right-4 transform -translate-y-1/2 p-1 bg-orange-800 text-gray-100 rounded-full shadow-md"
+        >
+          {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
+        </button>
+      )}
+    </aside>
+  );
+}
